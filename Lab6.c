@@ -104,7 +104,7 @@ void RoundRobin(struct Process* proc, int num_processes, int time_slice);
 int main() {
     printf("\n\n\t--- SCHEDULING ALGORITHMS ---\n");
     printf("\t1. FCFS\n");
-    printf("\t2. SJF (Nonpreemptive)\n");
+    printf("\t2. SJF (Non-preemptive)\n");
     printf("\t3. SRTF (SJF Preemptive)\n");
     printf("\t4. Priority Based (Preemptive)\n");
     printf("\t5. Round Robin (Preemptive)\n");
@@ -274,7 +274,7 @@ void FCFS(struct Process* proc, int num_processes) {
 // Implement Shortest Job First (nonpreemptive)
 void SJF(struct Process* proc, int num_processes) {
 
-	printf("\n\t--- Shortest Job First (Nonpreemptive) ---\n");
+	printf("\n\t--- Shortest Job First (Non-preemptive) ---\n");
 
 	qsort(proc, num_processes, sizeof(struct Process), compareArrival); //sort all processes first by their arrival time
 	
