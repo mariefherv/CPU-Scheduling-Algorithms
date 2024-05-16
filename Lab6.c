@@ -197,9 +197,9 @@ void display(struct Process* proc, int num_processes) {
     printf("\n");
     
     for (int i = 0; i < num_processes; i++) {
-        printf("\t %d", proc[i].start);
+        printf("\t %i", proc[i].start);
         if (i == num_processes - 1) {
-            printf("\t %d", proc[i].start + proc[i].burst);
+            printf("\t%i", proc[i].start + proc[i].burst);
         }
     }
     printf("\n\n");
@@ -252,16 +252,12 @@ void FCFS(struct Process* proc, int num_processes) {
 
     // Find each process's waiting time and turnaround time
     int prev_end = 0;
-    int total_wait = 0;
-    int total_turnaround = 0;
     
     for (int i = 0; i < num_processes; i++) {
-        proc[i].start = prev_end;
-        proc[i].wait = prev_end - proc[i].arrival;
-        prev_end += proc[i].burst;
-        proc[i].turnaround = prev_end - proc[i].arrival;
-        total_wait += proc[i].wait;
-        total_turnaround += proc[i].turnaround;
+        proc[i].start = prev_end;                               // set start time as current turnaround time(prev_end)
+        proc[i].wait = prev_end - proc[i].arrival;              // wait_time = time_started - arrival
+        prev_end += proc[i].burst;                              // update prev_end
+        proc[i].turnaround = prev_end - proc[i].arrival;        // turnaround = time_finished - arrival
     }
 
     display(proc, num_processes);
