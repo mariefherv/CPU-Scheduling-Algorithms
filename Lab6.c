@@ -1,4 +1,5 @@
-// Lab 6: CPU Scheduling algorithms by Villanueva, Mariefher Grace Z.
+// Lab 6: CPU Scheduling algorithms
+// 201908158 - Villanueva, Mariefher Grace Z.
 
 #include <stdio.h>
 #include <stdlib.h> // for qsort, malloc, realloc
@@ -77,19 +78,16 @@ void addEndTimes(struct Process *p, int end_time) {
         fprintf(stderr, "Memory allocation failed\n");
         exit(1);
     }
-    // ddd the new burst time to the array
-    p->end_times[p->burst_count] = end_time;
-    // add burst_count (size)
+    // add the new end time to the array
+    p->end_times[p->end_count] = end_time;
+    // increment end_count (size)
     p->end_count++;
 }
 
 // to free the dynamically allocated memory used in dynamic arrays
-void freeProcessBurst(struct Process *p) {
+void freeProcess(struct Process *p) {
     free(p->burst_times); 
-}
-
-void freeProcessEnd(struct Process *p) {
-    free(p->end_times);
+    free(p->end_times); 
 }
 
 // function declarations
@@ -103,7 +101,7 @@ void RoundRobin(struct Process* proc, int num_processes, int time_slice);
 
 int main() {
     printf("\n\n\t--- SCHEDULING ALGORITHMS ---\n");
-    printf("\t1. FCFS\n");
+    printf("\t1. FCFS (Non-preemptive)\n");
     printf("\t2. SJF (Non-preemptive)\n");
     printf("\t3. SRTF (SJF Preemptive)\n");
     printf("\t4. Priority Based (Preemptive)\n");
@@ -141,8 +139,7 @@ int main() {
 
     // Free dynamically allocated memory for each process
     for (int i = 0; i < num_processes; i++) {
-        freeProcessBurst(&proc[i]);
-        freeProcessEnd(&proc[i]);
+        freeProcess(&proc[i]);
     }
 
     return 0;
@@ -167,7 +164,7 @@ void get_details(struct Process* proc, int num_processes, int choice) {
     }
 
     if (choice == 4) {
-        printf("\n\n\t--- Prioritize processes from 1 (highest priority) to 5 (lowest priority) ---\n");
+        printf("\n\n\t--- Prioritize processes from 1 (highest priority) to %d (lowest priority) ---\n", num_processes);
         for (int i = 0; i < num_processes; i++) {
             printf("\tEnter priority number for %s: ", proc[i].name);
             scanf("%d", &proc[i].priority);
@@ -240,7 +237,7 @@ void displayPreemptive(struct Process* proc, int num_processes, int turnaround) 
             }
         }
 		if(i == turnaround-1) {
-			printf("\t%i", i+1); // for the final turnaround time
+			printf("\t%i", turnaround); // for the final turnaround time
 		}
     }
 
@@ -346,8 +343,9 @@ void SRTF(struct Process* proc, int num_processes) {
 			// if process has many burst counts
             if (proc[index].burst_count > 1) {
                 proc[index].wait = proc[index].burst_times[0] - proc[index].arrival; // initial wait time from arrival to first burst
-                for (int i = 1; i < proc[index].burst_count; i++) { // starting from index 1
-                    proc[index].wait += (proc[index].burst_times[i] - (proc[index].end_times[i])); // calculate wait time between bursts
+                for (int i = 0; i < proc[index].end_count; i++) {
+                    // starting from index 0 of end_times and index 1 of burst_times
+                    proc[index].wait += (proc[index].burst_times[i+1] - (proc[index].end_times[i])); // calculate wait time between bursts
                 }
             } else { // if process only had a one time burst
                 proc[index].wait = proc[index].burst_times[0] - proc[index].arrival;
@@ -379,10 +377,10 @@ void Priority(struct Process* proc, int num_processes) {
 		int shortest_burst = getMaxBurst(proc, num_processes);
         prev_index = index;
 
-        // find the shortest job that has arrived
+        // find the highest priority job
         for (i = 0; i < num_processes; i++) {
-            // if process i has arrived and has less burst time than the process before
-            if (proc[i].arrival <= prev_end && proc[i].burst < shortest_burst && !proc[i].finished && proc[i].priority < highest_priority) {
+            // if process i has arrived and has higher priority
+            if (proc[i].arrival <= prev_end && !proc[i].finished && proc[i].priority < highest_priority) {
                 shortest_burst = proc[i].burst;
 				highest_priority = proc[i].priority;
                 index = i;
@@ -406,8 +404,9 @@ void Priority(struct Process* proc, int num_processes) {
             // if process has many burst counts
             if (proc[index].burst_count > 1) {
                 proc[index].wait = proc[index].burst_times[0] - proc[index].arrival; // initial wait time from arrival to first burst
-                for (int i = 1; i < proc[index].burst_count; i++) { // starting from index 1
-                    proc[index].wait += (proc[index].burst_times[i] - (proc[index].end_times[i])); // calculate wait time between bursts
+                for (int i = 0; i < proc[index].end_count; i++) { 
+                    // starting from index 0 of end_times and index 1 of burst_times
+                    proc[index].wait += (proc[index].burst_times[i+1] - (proc[index].end_times[i])); // calculate wait time between bursts
                 }
             } else { // if process only had a one time burst
                 proc[index].wait = proc[index].burst_times[0] - proc[index].arrival;
@@ -442,8 +441,9 @@ void RoundRobin(struct Process* proc, int num_processes, int time_slice) {
                 // if there is context switch
                 if (index != prev_index) {
                     if(prev_index != -1) addEndTimes(&proc[prev_index], prev_end); // set end time of previous process that bursted
-                    addBurstTime(&proc[index], prev_end); // add new burst time to current process
                 }
+
+                addBurstTime(&proc[index], prev_end); // add new burst time to current process
 
                 // subtract burst times
                 if(proc[index].burst >= time_slice) {
@@ -462,8 +462,10 @@ void RoundRobin(struct Process* proc, int num_processes, int time_slice) {
                     // if process has many burst counts
                     if (proc[index].burst_count > 1) {
                         proc[index].wait = proc[index].burst_times[0] - proc[index].arrival; // initial wait time from arrival to first burst
-                        for (int i = 1; i < proc[index].burst_count; i++) { // starting from index 1
-                            proc[index].wait += (proc[index].burst_times[i] - (proc[index].end_times[i])); // calculate wait time between bursts
+
+                        for (int i = 0; i < proc[index].end_count; i++) {
+                            // starting from index 0 of end_times and index 1 of burst_times
+                            proc[index].wait += (proc[index].burst_times[i+1] - (proc[index].end_times[i])); // calculate wait time between bursts
                         }
                     } else { // if process only had a one time burst
                         proc[index].wait = proc[index].burst_times[0] - proc[index].arrival;
